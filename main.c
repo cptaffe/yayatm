@@ -14,9 +14,16 @@
 
 int main() {
   ygraph *g = yggen();
+  uint8_t *last = NULL;
   for (size_t i = 0; i < 100; i++) {
     yevent e;
     yrandom(e.id);
+    if (last != NULL) {
+      memcpy(e.parent, last, sizeof(yuid));
+    } else {
+      yrandom(e.parent);
+    }
+    last = e.id;
     yadd(g, *ynleaf(e));
   }
   ypprint(g->tree);
