@@ -5,32 +5,22 @@
 
 #include "yuid.h"
 
-typedef struct {
-  yevent event;
-  yuid *leaves;
-} ynode;
-
 // Binary Search Tree
+// sorted by event hash
 // TODO: auto-balance (Red-Black tree)
+// Merkle tree
 typedef struct ytree {
-  ynode key;
+  yuid hash;
+  ymsg msg;
   struct ytree *parent, *left, *right;
 } ytree;
 
-typedef struct {
-  ytree *tree;
-  yuid parent;
-  yuid *lids;
-  ynode *leaves;  // current leaves
-} ygraph;
+typedef uint8_t *ytd;  // tree descriptor (tnode hash)
 
-ytree *ytleaf(ynode n);
-ynode *ynleaf(yevent e);
-ygraph *yggen();
+ytd yleaf(ytree *t, ymsg m);
 ytree *ysearch(ytree *t, yuid id);
 void yinsert(ytree *t, ytree *n);
 void ydelete(ytree *t);
 void ypprint(ytree *t);
-void yadd(ygraph *g, ynode n);
 
 #endif  // YATM_GRAPH_H_

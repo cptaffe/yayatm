@@ -13,18 +13,18 @@
 #include "yuid.h"
 
 int main() {
-  ygraph *g = yggen();
+  ytree *t = &(ytree){};
   uint8_t *last = NULL;
-  for (size_t i = 0; i < 100; i++) {
-    yevent e;
-    yrandom(e.id);
+  for (size_t i = 0; i < 10; i++) {
+    ymsg m = {};
+    yrandom(m.id);
     if (last != NULL) {
-      memcpy(e.parent, last, sizeof(yuid));
+      memcpy(m.parent, last, sizeof(yuid));
     } else {
-      yrandom(e.parent);
+      yrandom(m.parent);
     }
-    last = e.id;
-    yadd(g, *ynleaf(e));
+    last = m.id;
+    yleaf(t, m);
   }
-  ypprint(g->tree);
+  ypprint(t);
 }
