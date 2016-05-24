@@ -10,21 +10,20 @@
 #include <unistd.h>
 
 #include "graph.h"
-#include "yuid.h"
+#include "y.h"
 
 int main() {
-  ytree *t = &(ytree){};
-  uint8_t *last = NULL;
+  y *y = yy();
   for (size_t i = 0; i < 10; i++) {
-    ymsg m = {};
-    yrandom(m.id);
-    if (last != NULL) {
-      memcpy(m.parent, last, sizeof(yuid));
-    } else {
-      yrandom(m.parent);
-    }
-    last = m.id;
-    yleaf(t, m);
+    ymsg(y, &i, sizeof(i));
   }
-  ypprint(t);
+  ypprint(y->tree);
+
+  yuid key;
+  yrandom(key, sizeof(yuid));
+  int a = 4;
+  yhead *h = ywire(key, key, NULL, &a, sizeof(a));
+  printf("%d\n", yunwire(h));
+  free(h);
+  ydy(y);
 }

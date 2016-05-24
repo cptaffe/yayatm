@@ -3,23 +3,15 @@
 #ifndef YATM_YUID_H_
 #define YATM_YUID_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-// multi-byte crytographically sound random number,
-// which serves as the equivalent of a UUID.
-enum { kYuidSize = 2 };
+typedef uint8_t yuid[2];
 
-typedef uint8_t yuid[kYuidSize];
-
-void yrandom(yuid y);
-void yhash(yuid y, void *src, size_t n);
-void yhcomb(yuid y, yuid a);
-char *base64(void *src, size_t n);
-
-typedef struct {
-  yuid id;
-  yuid parent;
-} ymsg;
+void yrandom(void *v, size_t s);
+void yhash(yuid y, const void *src, size_t n);
+void yhcomb(yuid y, const yuid a);
+char *base64(const void *src, size_t n);
 
 #endif  // YATM_YUID_H_

@@ -8,22 +8,22 @@
 #include "tiny_sha3/sha3.h"
 #include "yuid.h"
 
-void yrandom(yuid y) { syscall(SYS_getrandom, y, kYuidSize, 0); }
+void yrandom(void *v, size_t s) { syscall(SYS_getrandom, v, s, 0); }
 
 // return a hash of some bytes
-void yhash(yuid y, void *src, size_t n) { sha3(src, n, y, kYuidSize); }
+void yhash(yuid y, const void *src, size_t n) { sha3(src, n, y, sizeof(yuid)); }
 
-void yhcomb(yuid y, yuid a) {
+void yhcomb(yuid y, const yuid a) {
   for (size_t i = 0; i < sizeof(yuid); i++) {
     y[i] += a[i];
   }
 }
 
-char *base64(void *srcv, size_t n) {
+char *base64(const void *srcv, size_t n) {
   const size_t s = ((n / 3) + 1) * 4;
   const char *dict =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890+/";
-  uint8_t *src = srcv;
+  const uint8_t *src = srcv;
   char *buf = calloc(sizeof(char), s);
   size_t j = 0;
   for (size_t i = 0; i < n; i++) {

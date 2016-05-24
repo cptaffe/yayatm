@@ -7,36 +7,44 @@
 
 #include "graph.h"
 
-// NOTE: messages should be indexed by hash, which means they must include
+// NOTE: messages should be indexed by crypt.id, which means they must include
 // the time of the transaction. Perhaps the time should be within some error?
 
-// tree generate hash
+// tree generate crypt.id
 static void ytgh(ytree *t) {
   if (t->left || t->right) {
     if (t->left) {
       ytgh(t->left);
-      yhcomb(t->hash, t->left->msg.id);
+      yhcomb(t->hash, t->left->head->crypt.id);
     }
     if (t->right) {
       ytgh(t->right);
-      yhcomb(t->hash, t->right->msg.id);
+      yhcomb(t->hash, t->right->head->crypt.id);
     }
   } else {
-    yhash(t->hash, &t->msg, sizeof(ymsg));
+    yhash(t->hash, t->head, sizeof(yhead) + t->head->length);
   }
 }
 
-ytd yleaf(ytree *t, ymsg m) {
-  ytree *nt = malloc(sizeof(ytree));
+ytree *yleaf(yhead *h) {
+  ytree *nt = calloc(sizeof(ytree), 1);
   *nt = (ytree){
-      .msg = m,
+      .head = h,
   };
-  yinsert(t, nt);
-  return nt->msg.id;
+  return nt;
 }
 
-ytree *ysearch(ytree *t, ytd id) {
-  int o = memcmp(t->msg.id, id, sizeof(yuid));
+void ydleaf(ytree *t) {
+  if (t != NULL) {
+    ydleaf(t->left);
+    ydleaf(t->right);
+    free(t->head);
+    free(t);
+  }
+}
+
+ytree *ysearch(ytree *t, yuid id) {
+  int o = memcmp(t->head->crypt.id, id, sizeof(yuid));
   if (!o) {
     return t;
   }
@@ -48,16 +56,20 @@ ytree *ysearch(ytree *t, ytd id) {
   return NULL;
 }
 
-void yinsert(ytree *t, ytree *n) {
+ytree *yinsert(ytree *t, ytree *n) {
   n->parent = t;
-  if (memcmp(n->msg.id, t->msg.id, sizeof(yuid)) > 0) {
+  if (t == NULL) {
+    return n;
+  }
+  int cmp = memcmp(n->head->crypt.id, t->head->crypt.id, sizeof(yuid));
+  if (cmp > 0) {
     if (t->right != NULL) {
       yinsert(t->right, n);
     } else {
       t->right = n;
       ytgh(t);
     }
-  } else {
+  } else if (cmp < 0) {
     if (t->left != NULL) {
       yinsert(t->left, n);
     } else {
@@ -65,11 +77,16 @@ void yinsert(ytree *t, ytree *n) {
       ytgh(t);
     }
   }
+  // NOTE: else crypt.ides are the same:
+  // assuming they are the same message and it is already
+  // in the tree
+  return t;
 }
 
 void ydelete(ytree *t) {
   if (t->parent->right != NULL) {
-    if (memcmp(t->msg.id, t->parent->right->msg.id, sizeof(yuid)) == 0) {
+    if (memcmp(t->head->crypt.id, t->parent->right->head->crypt.id,
+               sizeof(yuid)) == 0) {
       t->parent->right = NULL;
     } else {
       t->parent->left = NULL;
@@ -79,14 +96,15 @@ void ydelete(ytree *t) {
   }
   yinsert(t->parent, t->left);
   yinsert(t->parent, t->right);
-  ytgh(t->parent);  // rehash tree
+  ytgh(t->parent);  // recrypt.id tree
 }
 
 static void lpprint(ytree *t, size_t l) {
   char *sbuf = calloc(sizeof(char), l + 1);
   memset(sbuf, '-', l);
   printf("%s", sbuf);
-  char *buf = base64(t->msg.id, sizeof(yuid)),
+  free(sbuf);
+  char *buf = base64(t->head->crypt.id, sizeof(yuid)),
        *buf2 = base64(t->hash, sizeof(yuid));
   printf("%s[%s]\n", buf, buf2);
   free(buf);
