@@ -5,60 +5,77 @@
 
 #include "y.h"
 
+static void yilink(y *y, ykey *k, size_t i) {
+  size_t len = 0;
+  for (ylink *l = y->unlinked; l != NULL; l = l->next) {
+    if (len == i) {
+      memcpy(k, &l->key, sizeof(ykey));
+    }
+    len++;
+  }
+  return;
+}
+
 // return a random link
-static const yuid *yrlink(y *y) {
+static void yrlink(y *y, ykey *k) {
+  if (y->unlinked == NULL) {
+    return;
+  }
   size_t len = 0;
   for (ylink *l = y->unlinked; l != NULL; l = l->next) {
     len++;
   }
   size_t i;
   yrandom(&i, sizeof(i));
-  len = 0;
-  for (ylink *l = y->unlinked; l != NULL; l = l->next) {
-    if (len == i) {
-      return &l->id;
-    }
-    len++;
-  }
-  return NULL;
+  yilink(y, k, i % len);
 }
 
-static void ylrm(y *y, yuid id) {
+static void ylrm(y *y, ykey *k) {
   ylink *last = NULL;
   for (ylink *l = y->unlinked; l != NULL; l = l->next) {
-    if (!memcmp(l->id, id, sizeof(yuid))) {
+    if (!memcmp(&l->key, k, sizeof(ykey))) {
       if (!last) {
         y->unlinked = l->next;
       } else {
         last->next = l->next;
       }
       free(l);
+      return;
     }
     last = l;
   }
 }
 
-yhead *ymsg(y *y, void *v, size_t s) {
+ynode *ymsg(y *y, void *v, size_t s) {
   // generate a header
-  yhead *h = ywire(y->privkey, y->pubkey, *yrlink(y), v, s);
+  ynode *n = ypoint(v, s);
+  memcpy(n->key.key, y->pubkey, sizeof(yuid));
+  yrlink(y, &n->parent);
+  ylrm(y, &n->parent);
   // insert into the tree
-  y->tree = yinsert(y->tree, yleaf(h));
-  // add to list of parentless entries.
-  ylrm(y, h->crypt.parent);
-  return h;
+  ytree *lf = yleaf(n);
+  y->tree = yinsert(y->tree, lf);
+  // insert into list, list by node hash
+  ylink *l = malloc(sizeof(ylink));
+  *l = (ylink){
+      .key = n->key,
+  };
+  l->next = y->unlinked;
+  y->unlinked = l;
+  return n;
 }
 
 y *yy() { return calloc(sizeof(y), 1); }
 
-void ydlink(ylink *l) {
+void yunchain(ylink *l) {
   if (l != NULL) {
-    ydlink(l->next);
+    yunchain(l->next);
   }
   free(l);
 }
 
-void ydy(y *y) {
-  ydleaf(y->tree);
-  ydlink(y->unlinked);
+void yuny(y *y) {
+  yuntree(y->tree);
+  yunchain(y->unlinked);
   free(y);
 }

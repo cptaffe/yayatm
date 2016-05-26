@@ -3,7 +3,7 @@
 #ifndef WIRE_H_
 #define WIRE_H_
 
-#include "yuid.h"
+#include "./yuid.h"
 
 // wire format header
 typedef struct {
@@ -14,8 +14,8 @@ typedef struct {
   uint64_t length;
 } yhead;
 
-yhead *ywire(const yuid pubkey, const yuid privkey, const yuid parent, void *v,
-             size_t s);
-bool yunwire(yhead *w);
+yhead *ywire(const yuid pubkey, const yuid privkey, const yuid parent,
+             const void *v, size_t s);
+yhead *yunwire(const yhead *w);
 
 #endif  // WIRE_H_

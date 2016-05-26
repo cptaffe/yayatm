@@ -5,13 +5,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#include "tiny_sha3/sha3.h"
 #include "yuid.h"
 
 void yrandom(void *v, size_t s) { syscall(SYS_getrandom, v, s, 0); }
-
-// return a hash of some bytes
-void yhash(yuid y, const void *src, size_t n) { sha3(src, n, y, sizeof(yuid)); }
 
 void yhcomb(yuid y, const yuid a) {
   for (size_t i = 0; i < sizeof(yuid); i++) {
