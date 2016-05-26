@@ -2,5 +2,5 @@
 yet another, yet another team messenger
 
 ```sh
-cc main.c yuid.c graph.c tiny_sha3/sha3.c -o yayatm
+clang main.c yuid.c graph.c wire.c y.c hash.c -g -Weverything -Wno-padded
 ```
